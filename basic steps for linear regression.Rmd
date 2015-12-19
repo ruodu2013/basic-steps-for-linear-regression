@@ -1,0 +1,73 @@
+---
+title: "basic steps of linear regression"
+author: "ruo"
+date: "Thursday, April 09, 2015"
+output: word_document
+---
+
+Step 1: read the data into R studio
+```{r}
+setwd=("C:/Users/Ruo/Documents/R")
+fueleff<-read.csv("C:/Users/Ruo/Documents/R/FuelEfficiency.csv")
+```
+
+step2 :learn the basic info about the dataset. There is highly corralition between some virables, which means we need to drop some of them. 
+
+```{r}
+head(fueleff)
+cor(fueleff)
+```
+from the graphs, we could know there is some variables showing linear regression relationship to the observation. We can try it!
+
+```{r, echo=FALSE}
+par(mfrow = c(2,2))
+plot(GPM~.,data=fueleff)
+```
+
+step3: build model initally 
+```{r}
+model.full<-lm(GPM~.,data=fueleff)
+summary(model.full)
+```
+
+step4:select variables
+1)all-subsets regression
+```{r}
+library(leaps)
+leaps=regsubsets(GPM~.,data=fueleff,nbest=2,nvmax=7)# 2 best model for each number of predictors
+out=summary(leaps)
+tab=cbind(out$which,out$rsq,out$adjr2,out$cp)
+tab
+```
+The resulting table shows the trade-off between model size and model fit
+```{r, echo=FALSE}
+plot(leaps, scale="adjr2")
+```
+we got MPG+NC+HP+ET
+
+2)stepwise method.forward stepwise and backward stepwise
+```{r}
+library(MASS)
+full.model<-lm(GPM~.,data=fueleff)
+reduced.model<-step(full.model,direction="backward")
+
+min.model <- lm(GPM~1,data=fueleff)
+forward.model<-step(min.model,direction="forward",scope=(~MPG + WT + DIS + NC + HP + ACC + ET))
+```
+
+the best AIC is -123.44  GPM ~ MPG + NC + HP + ET
+
+step5: build model
+Then we try lm with MPG + NC + HP + ET
+```{r}
+model.2<-lm(GPM~MPG + NC + HP + ET,data=fueleff)
+summary(model.2)
+```
+
+Adjusted R-squared:  0.9743 ,even better then the ARS of the model with all variables, which is 0.9722
+
+step6:model validation
+```{r}
+par(mfrow = c(2,2)) 
+plot(model.2,which=c(1:4))
+```
